@@ -1,0 +1,79 @@
+<head lang="en">
+    <title>Unicode splitter</title>
+    <style>
+        textarea {background-color:#ccc}
+
+        td {
+            vertical-align: top;
+            padding: 0.3em;
+        }
+
+        em {
+            font-style: normal;
+        }
+
+        em:hover {background-color:#afa}
+
+        div#output {
+            font-size: 200%;
+        }
+    </style>
+
+<!-- ======== tippy.js ======== -->
+<script src="//unpkg.com/@popperjs/core@2"></script>                                                                                                  
+<script src="//unpkg.com/tippy.js@6"></script> 
+
+<!-- ======== Unicode UCD for Javascript ======== -->
+<!-- Note: this data is 9 years old. Maybe use https://github.com/iLib-js/UCD instead? -->
+<script src="//cdn.jsdelivr.net/gh/ynakajima/ucd/data/unicodedata.js"></script>        
+<script src="//cdn.jsdelivr.net/gh/ynakajima/ucd/ucd-0.2.0.min.js"></script>
+
+</head>
+
+
+<p><table>
+<tr>
+  <td width="50%">Enter Unicode text, for example, Z̷̢̝̜̪͉̤̘̗̪͇̥̞̬͗a̸̢̮̝̞̘̺̯̭̘͖̒͒́̆̄͊͝l̶̛̛̳̀̉̃̽͆ģ̶̛̟͖̭͉̺̱͍̼̤͔̙͐͐͋̈́̈́̅̚͜͝ͅơ̵̢̹̪̬̖̫̖͈̰̤̫͈͙͉̌̒̇̆̋̓̈́̊͛̏͘͝͠͝ text:
+      <p><textarea rows=10 cols=40 id="textarea"  onchange="text_changed()" onkeyup="text_changed()" ></textarea>
+      <p>This tool splits a Unicode string apart into its component characters, showing combining characters separately.</td>
+  <td>Decoded:
+      <p><div id="output"/></td>
+</table>
+
+
+<script>
+
+    function text_changed() {
+        var textarea = document.getElementById('textarea');
+        var output = document.getElementById('output');
+
+        window.location.hash = '#' + encodeURI(textarea.value);     // update the URL
+
+        output.innerHTML = '';
+        var is_first = true;
+        for (const char of textarea.value) {
+            if (! /^\p{Mark}$/u.test(char) && !is_first) {      // is this a combining mark?
+                output.innerHTML = output.innerHTML + '<br/>';
+            }
+            is_first = false;
+            display_char = char;
+            if (/^[\p{Z}\p{C}]$/u.test(char)) {
+                // a separator (space or newline) or control character (tab, etc)
+                display_char = '█';
+            }
+            // The &nbsp; is useful here to encourage solo combining characters to display correctly. See https://stackoverflow.com/questions/38126512/can-a-combining-character-be-used-alone-in-unicode
+            hex = char.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0');
+            output.innerHTML = output.innerHTML + '<em data-tippy-content="U+' + hex + ' ' + UCD.getName(char) + '">&nbsp;' + display_char + '<em/> '; 
+        }
+
+        tippy('[data-tippy-content]');
+    }
+
+    if (! /^\p{M}+$/u.test('\u{0338}')) {
+        alert('This requires ECMAScript ES2018.');
+    }
+
+    // pull the initial value from the URL
+    document.getElementById('textarea').value = decodeURI(window.location.hash.substr(1));
+    text_changed();
+</script>
